@@ -43,7 +43,7 @@ adb version > nul 2>&1 || (
 		exit
 	) else if !errorlevel!==2 (
 		:PICK_ADB
-		for /f "delims=" %%A in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = '|adb.exe'; $openFileDialog.Title = 'Select adb.exe'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "ADB_DIR=%%~dpA"
+		for /F "delims=" %%A in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = '|adb.exe'; $openFileDialog.Title = 'Select adb.exe'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "ADB_DIR=%%~dpA"
 		echo.
 		if not exist "!ADB_DIR!" (
 			echo|set /p="Do you want to try again? [y/n]: " & choice /c yn /n
@@ -56,7 +56,7 @@ adb version > nul 2>&1 || (
 		set "PATH=!PATH!;!ADB_DIR!"
 		echo|set /p="Do you want to add such path into PATH environment variable? [y/n]: " & choice /c yn /n
 		if !errorlevel!==1 (
-			for /f "tokens=2,*" %%A in ('reg query "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /v Path ^| find /i "Path"') do (
+			for /F "tokens=2,*" %%A in ('reg query "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /v Path ^| find /i "Path"') do (
 				set "reg_path=%%B;!ADB_DIR!"
 			)
 			echo.
@@ -247,7 +247,7 @@ goto :EOF
 		echo Now you must be pretty sure about what you are doing.
 		echo Do not select an incorrect volume number.
 		echo.
-		for /f "tokens=*" %%a in ('echo list volume ^| diskpart ^| findstr "Volume "') do (
+		for /F "tokens=*" %%a in ('echo list volume ^| diskpart ^| findstr "Volume "') do (
 			echo %%a
 			set /a VOL+=1
 		)
@@ -326,7 +326,7 @@ goto :EOF
 			echo.
 			echo Formatting device Windows drive !WINDRIVE!^:...
 			echo select volume !WINDRIVE! > diskpart_script.tmp
-			for /f "tokens=2 delims==" %%a in ('wmic logicaldisk where "DeviceID='!WINDRIVE!:'" get VolumeName /value ^| findstr "="') do (
+			for /F "tokens=2 delims==" %%a in ('wmic logicaldisk where "DeviceID='!WINDRIVE!:'" get VolumeName /value ^| findstr "="') do (
 				echo format quick fs=ntfs label=^"%%a^" >> diskpart_script.tmp
 			)
 			echo exit >> diskpart_script.tmp
@@ -373,7 +373,7 @@ goto :EOF
 		echo Now you must be pretty sure about what you are doing.
 		echo Do not select an incorrect volume number.
 		echo.
-		for /f "tokens=*" %%a in ('echo list volume ^| diskpart ^| findstr "Volume "') do (
+		for /F "tokens=*" %%a in ('echo list volume ^| diskpart ^| findstr "Volume "') do (
 			echo %%a
 			set /a VOL+=1
 		)
@@ -452,7 +452,7 @@ goto :EOF
 			echo.
 			echo Formatting device ESP drive !ESPDRIVE!^:...
 			echo select volume !ESPDRIVE! > diskpart_script.tmp
-			for /f "tokens=2 delims==" %%a in ('wmic logicaldisk where "DeviceID='!ESPDRIVE!:'" get VolumeName /value ^| findstr "="') do (
+			for /F "tokens=2 delims==" %%a in ('wmic logicaldisk where "DeviceID='!ESPDRIVE!:'" get VolumeName /value ^| findstr "="') do (
 				echo format quick fs=fat32 label=^"%%a^" >> diskpart_script.tmp
 			)
 			echo exit >> diskpart_script.tmp
@@ -496,7 +496,7 @@ goto :EOF
 	echo.
 	pause
 
-	for /f "delims=" %%a in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = 'Windows Imaging Format (.wim; .esd; .iso)|*.wim;*.esd;*.iso'; $openFileDialog.Title = 'Select a image file'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "WIMFILE=%%a"
+	for /F "delims=" %%a in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = 'Windows Imaging Format (.wim; .esd; .iso)|*.wim;*.esd;*.iso'; $openFileDialog.Title = 'Select a image file'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "WIMFILE=%%a"
 	if not exist "!WIMFILE!" (
 		echo.
 		echo It seems you didn't select any file.
@@ -516,19 +516,21 @@ goto :EOF
 	echo Step 3 - Select an image:             WAITING
 	echo.
 	echo.
-	if /i "!WIMFILE:~-3!"=="iso" (
-		set INSTALL_WIM=sources\install.wim
-		7z l !WIMFILE! | findstr /C:"!INSTALL_WIM!" > nul 2>&1 || (
+	if /I "!WIMFILE:~-3!"=="iso" (
+		for /F "delims=" %%A in ('7z l !WIMFILE! ^| find "sources" ^| find "nstall."') do (
+			set "WIM_NAME=%%~nxA"
+		)
+		7z l !WIMFILE! | findstr /C:"sources\!WIM_NAME!" > nul 2>&1 || (
 			echo Invalid iso.
 			goto ASK_IMG_SEL
 		)
 		echo.
-		echo Extracting install.wim file from iso file...
-		7z e !WIMFILE! !INSTALL_WIM! -o!DIR! > nul 2>&1 && (
+		echo Extracting !WIM_NAME! file from .iso file...
+		7z e !WIMFILE! sources\!WIM_NAME! -o!DIR! > nul 2>&1 && (
 			echo     Done.
 			echo.
 			echo.
-			set WIMFILE=install.wim
+			set "WIMFILE=!WIM_NAME!"
 			set INDEX=1
 			timeout 2 /nobreak > nul 2>&1
 		) || (
@@ -536,7 +538,7 @@ goto :EOF
 			goto ASK_IMG_SEL
 		)
 	)
-	echo Listing Windows versions index...
+	echo Listing Windows products index...
 	echo.
 	dism /Get-WimInfo /WimFile:"!WIMFILE!"
 	echo.
@@ -548,14 +550,14 @@ goto :EOF
 
 	if !INDEXES! GTR 1 (
 		for /L %%i in (1,1,!INDEXES!) do set "INDEXLIST=!INDEXLIST!%%i"
-		echo|set /p="Choose a version to install [1 to !INDEXES!]: " & choice /c !INDEXLIST! /n
+		echo|set /p="Choose a product to install [1 to !INDEXES!]: " & choice /c !INDEXLIST! /n
 		set INDEX=!errorlevel!
 	) else (
 		set INDEX=1
 	)
 	set "line_number=0"
 	set exit_gin=0
-	for /f "tokens=*" %%a in ('dism /Get-WimInfo /WimFile:"!WIMFILE!"') do (
+	for /F "tokens=*" %%a in ('dism /Get-WimInfo /WimFile:"!WIMFILE!"') do (
 		set /a line_number+=1
 		set "line=%%a"
 		set "line=!line:*:=!"
@@ -595,7 +597,7 @@ goto :EOF
 		msg * Windows deployment failed.
 		echo.
 		pause
-		if exist install.wim del install.wim > nul 2>&1
+		if exist !WIM_NAME! del !WIM_NAME! > nul 2>&1
 		call :MAIN
 	)
 
@@ -609,7 +611,7 @@ goto :EOF
 		echo      Check the screen.
 		echo.
 		pause
-		if exist install.wim del install.wim > nul 2>&1
+		if exist !WIM_NAME! del !WIM_NAME! > nul 2>&1
 		call :MAIN
 	)
 
@@ -629,7 +631,7 @@ goto :EOF
 REM	USB fix
 	reg query "HKLM\WOASYSTEM\ControlSet001\Control\USB" /v OsDefaultRoleSwitchMode >nul 2>&1
 	if !errorlevel!==0 (
-		for /f "tokens=3" %%a in ('reg query "HKLM\WOASYSTEM\ControlSet001\Control\USB" /v "OsDefaultRoleSwitchMode" 2^>nul ^| findstr /i /c:"OsDefaultRoleSwitchMode"') do (
+		for /F "tokens=3" %%a in ('reg query "HKLM\WOASYSTEM\ControlSet001\Control\USB" /v "OsDefaultRoleSwitchMode" 2^>nul ^| findstr /i /c:"OsDefaultRoleSwitchMode"') do (
 			if "%%a"=="0x1" (
 				echo U. USB host mode enforcement is^: ON ^(OsDefaultRoleSwitchMode^)
 				set usb_fix=1
@@ -648,7 +650,7 @@ REM	USB fix
 REM	OOBE bypass
 	reg query "HKLM\WOASOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v "BypassNRO" >nul 2>&1
 	if !errorlevel!==0 (
-		for /f "tokens=3" %%a in ('reg query "HKLM\WOASOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v "BypassNRO" 2^>nul ^| findstr /i /c:"BypassNRO"') do (
+		for /F "tokens=3" %%a in ('reg query "HKLM\WOASOFTWARE\Microsoft\Windows\CurrentVersion\OOBE" /v "BypassNRO" 2^>nul ^| findstr /i /c:"BypassNRO"') do (
 			if "%%a"=="0x1" (
 				echo O. Bypass Windows Out of Box Experience is^: ON ^(OOBE bypass^)
 				set oobe_fix=1
@@ -747,7 +749,7 @@ REM	Recovery capabilities
 		goto REGISTRY_OPTIONS
 	) else if !errorlevel!==6 (
 		:PICK_REG_FILE
-		for /f "delims=" %%I in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = 'Registry file (.reg)|*.reg'; $openFileDialog.Title = 'Select a registry file'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "REG_FILE=%%I"
+		for /F "delims=" %%I in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = 'Registry file (.reg)|*.reg'; $openFileDialog.Title = 'Select a registry file'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "REG_FILE=%%I"
 		if not exist "!REG_FILE!" (
 			echo.
 			echo It seems you didn't select any file.
@@ -780,7 +782,7 @@ REM	Recovery capabilities
 			goto REGISTRY_OPTIONS
 		)
 		(
-			for /f "tokens=*" %%a in ('type "!REG_FILE!"') do (
+			for /F "tokens=*" %%a in ('type "!REG_FILE!"') do (
 				set "line=%%a"
 				set "line=!line:HKEY_LOCAL_MACHINE\System=HKEY_LOCAL_MACHINE\WOASYSTEM!"
 				set "line=!line:HKEY_LOCAL_MACHINE\Software=HKEY_LOCAL_MACHINE\WOASOFTWARE!"
@@ -788,7 +790,7 @@ REM	Recovery capabilities
 			)
 		) > "!REG_FILE_NAME_FIXED!"
 		set reg_error=0
-		for /f "usebackq delims=" %%a in ("!REG_FILE_NAME_FIXED!") do (
+		for /F "usebackq delims=" %%a in ("!REG_FILE_NAME_FIXED!") do (
 			echo %%a | findstr /C:"HKEY_LOCAL_MACHINE\System" >nul && set reg_error=1
 			echo %%a | findstr /C:"HKEY_LOCAL_MACHINE\Software" >nul && set reg_error=1
 		)
@@ -842,7 +844,7 @@ REM	Recovery capabilities
 	echo That^'s all.
 	echo.
 	pause
-	if exist install.wim del install.wim > nul 2>&1
+	if exist !WIM_NAME! del !WIM_NAME! > nul 2>&1
 	call :MAIN
 goto :EOF
 
@@ -894,13 +896,13 @@ goto :EOF
 	) else if !errorlevel!==2 (
 		set "PATCH_RECOERY_ORIGIN=U. Use a recovery file (.img)"
 		call :USE
-	) else if /i !errorlevel!==3 (
+	) else if !errorlevel!==3 (
 		call :MAIN
 	)
 goto :EOF
 ::######################################################################################################################
 :USE
-	for /f "delims=" %%I in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = 'Android recovery image (.img)|*.img'; $openFileDialog.Title = 'Select a image file'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "recovery_file=%%I"
+	for /F "delims=" %%I in ('powershell -Command "& {Add-Type -AssemblyName System.Windows.Forms; $openFileDialog = New-Object System.Windows.Forms.OpenFileDialog; $openFileDialog.Filter = 'Android recovery image (.img)|*.img'; $openFileDialog.Title = 'Select a image file'; $openFileDialog.InitialDirectory = '!DIR!'; $openFileDialog.ShowDialog() | Out-Null; $openFileDialog.FileName}"') do set "recovery_file=%%I"
 	if not exist "!recovery_file!" (
 		echo.
 		echo It seems you didn't select any file.
@@ -927,7 +929,7 @@ goto :EOF
 :PULL
 	call :CONNECT_RECOVERY
 	echo !recovery_partition! | find "_" > nul 2>&1 && (
-		for /f "usebackq delims=_" %%A in (`"adb shell getprop ro.boot.slot_suffix"`) do (
+		for /F "usebackq delims=_" %%A in (`"adb shell getprop ro.boot.slot_suffix"`) do (
 			set recovery_partition=!recovery_partition!%%A
 		)
 	)
@@ -938,21 +940,21 @@ goto :EOF
 		call :PATCH_RECOVERY
 	)
 
-	for /f "usebackq delims=" %%a in (`"adb shell getprop ro.build.product"`) do (
+	for /F "usebackq delims=" %%a in (`"adb shell getprop ro.build.product"`) do (
 		set "device_name=%%a"
 	)
 	if "!device_name!"=="" (
-		for /f "usebackq delims=" %%a in (`"adb shell getprop ro.product.device"`) do (
+		for /F "usebackq delims=" %%a in (`"adb shell getprop ro.product.device"`) do (
 			set "device_name=%%a"
 		)
 	)
 	if "!device_name!"=="" (
-		for /f "usebackq delims=" %%a in (`"adb shell getprop ro.product.odm.device"`) do (
+		for /F "usebackq delims=" %%a in (`"adb shell getprop ro.product.odm.device"`) do (
 			set "device_name=%%a"
 		)
 	)
 	if "!device_name!"=="" (
-		for /f "usebackq delims=" %%a in (`"adb shell getprop ro.product.vendor.device"`) do (
+		for /F "usebackq delims=" %%a in (`"adb shell getprop ro.product.vendor.device"`) do (
 			set "device_name=%%a"
 		)
 	)
@@ -1026,21 +1028,21 @@ goto :EOF
 	)
 	echo.
 
-	for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.build.product=" "!AIK!\ramdisk\prop.default"') do (
+	for /F "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.build.product=" "!AIK!\ramdisk\prop.default"') do (
 		set "device_name=%%b"
 	)
 	if "!device_name!"=="" (
-		for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.product.device=" "!AIK!\ramdisk\prop.default"') do (
+		for /F "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.product.device=" "!AIK!\ramdisk\prop.default"') do (
 			set "device_name=%%b"
 		)
 	)
 	if "!device_name!"=="" (
-		for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.product.odm.device=" "!AIK!\ramdisk\prop.default"') do (
+		for /F "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.product.odm.device=" "!AIK!\ramdisk\prop.default"') do (
 			set "device_name=%%b"
 		)
 	)
 	if "!device_name!"=="" (
-		for /f "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.product.vendor.device=" "!AIK!\ramdisk\prop.default"') do (
+		for /F "tokens=1,* delims==" %%a in ('findstr /b /c:"ro.product.vendor.device=" "!AIK!\ramdisk\prop.default"') do (
 			set "device_name=%%b"
 		)
 	)
@@ -1198,7 +1200,7 @@ goto :EOF
 	)
 
 	call :CONNECT_FASTBOOT
-	for /f "tokens=2 delims=: " %%a in ('fastboot getvar unlocked 2^>^&1 ^| findstr "unlocked: "') do (
+	for /F "tokens=2 delims=: " %%a in ('fastboot getvar unlocked 2^>^&1 ^| findstr "unlocked: "') do (
 		if not "%%a"=="yes" (
 			echo It seems your bootloader is not unlocked yet.
 			echo Can not proceed this way.
@@ -1223,7 +1225,7 @@ goto :EOF
 		fastboot boot "!recovery_file!"
 		echo ______________________________________
 	) else if !option!==2 ( 
-		for /f "tokens=2 delims=: " %%a in ('fastboot getvar current-slot 2^>^&1 ^| findstr "current-slot: "') do set "current_slot=%%a"
+		for /F "tokens=2 delims=: " %%a in ('fastboot getvar current-slot 2^>^&1 ^| findstr "current-slot: "') do set "current_slot=%%a"
 		cls
 		echo ^> P. Patch recovery
 		echo ^'-^> !PATCH_RECOERY_ORIGIN!
@@ -1334,7 +1336,7 @@ goto :EOF
 				timeout 1 /nobreak > nul 2>&1
 				goto fastboot_loop
 			) else (
-				for /f "usebackq delims=" %%A in (`"type "!TEMP!\adb.txt" | find "" /v /c"`) do (
+				for /F "usebackq delims=" %%A in (`"type "!TEMP!\adb.txt" | find "" /v /c"`) do (
 					set /a devices=%%A-2
 				)
 				del "!TEMP!\adb.txt"
@@ -1382,7 +1384,7 @@ goto :EOF
 			goto recovery_loop
 		)
 	)
-	for /f "usebackq delims=" %%A in (`"type "%TEMP%\adb.txt" | find "" /v /c"`) do set /a devices=%%A-2
+	for /F "usebackq delims=" %%A in (`"type "%TEMP%\adb.txt" | find "" /v /c"`) do set /a devices=%%A-2
 	del "%TEMP%\adb.txt"
 	if !devices! GTR 1 (
 		echo !devices! devices were detected.
