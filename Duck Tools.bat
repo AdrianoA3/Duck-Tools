@@ -4,7 +4,7 @@ set AIK=AIK_3.8
 set BIN=%AIK%\android_win_tools
 set LETTERS=ABCDEFGHIJKLMNOPQRSTUVWXYZ
 set DIR=%~dp0
-cd /d %~dp0
+cd /d "!DIR!"
 mkdir Output > nul 2>&1
 title Duck Tools 1.0
 >nul 2>&1 net session || (
@@ -31,15 +31,61 @@ adb version > nul 2>&1 || (
 	echo.
 	echo adb.exe is missing.
 	echo.
-	echo D. Go to 15 Seconds Adb installer download page
+	echo G. Get latest platform tools ^(adb and fastboot^) from Google
 	echo S. Select adb.exe directory
 	echo E. Exit
 	echo.
-	echo|set /p="Choose: " & choice /c dse /n
+	echo|set /p="Choose: " & choice /c gse /n
 	if !errorlevel!==1 (
-		start https://androidmtk.com/download-15-seconds-adb-installer
 		echo.
-		pause
+		echo Downloading platform tools...
+		certutil -urlcache -split -f https://dl.google.com/android/repository/platform-tools-latest-windows.zip > nul 2>&1 || (
+			echo     Failed.
+			echo.
+			pause
+			exit
+		)
+		echo      Done
+		echo.
+		echo Unpacking platform-tools-latest-windows.zip...
+		7z.exe x platform-tools-latest-windows.zip > nul 2>&1 || (
+			echo     Failed.
+			echo.
+			pause
+			if exist platform-tools-latest-windows.zip del /f /q platform-tools-latest-windows.zip > nul 2>&1
+			exit
+		)
+		if not exist platform-tools (
+			echo     Failed.
+			echo.
+			pause
+			if exist platform-tools-latest-windows.zip del /f /q platform-tools-latest-windows.zip > nul 2>&1
+			exit		
+		)
+		echo      Done.
+		echo.
+		if exist !SYSTEMDRIVE!\adb (
+			ren !SYSTEMDRIVE!\adb adb-old > nul 2>&1
+			mkdir !SYSTEMDRIVE!\adb
+		)
+		(
+			xcopy platform-tools\adb.exe !SYSTEMDRIVE!\adb\ /y /q > nul 2>&1
+			xcopy platform-tools\AdbWinApi.dll !SYSTEMDRIVE!\adb\ /y /q > nul 2>&1
+			xcopy platform-tools\AdbWinUsbApi.dll !SYSTEMDRIVE!\adb\ /y /q > nul 2>&1
+			xcopy platform-tools\fastboot.exe !SYSTEMDRIVE!\adb\ /y /q > nul 2>&1
+		) || (
+			if exist !SYSTEMDRIVE!\adb ren !SYSTEMDRIVE!\adb-old adb > nul 2>&1
+			if exist platform-tools rmdir /s /q platform-tools > nul 2>&1
+			if exist platform-tools-latest-windows.zip del /f /q platform-tools-latest-windows.zip > nul 2>&1
+			echo     Failed.
+			echo.
+			pause
+			exit
+		)
+		set "ADB_DIR=!SYSTEMDRIVE!\adb"
+		if exist platform-tools-latest-windows.zip del /f /q platform-tools-latest-windows.zip > nul 2>&1
+		if exist platform-tools rmdir /s /q platform-tools > nul 2>&1
+		goto PLATFORM_JUMP
 		exit
 	) else if !errorlevel!==2 (
 		:PICK_ADB
@@ -53,29 +99,84 @@ adb version > nul 2>&1 || (
 				exit
 			)
 		)
+		:PLATFORM_JUMP
 		set "PATH=!PATH!;!ADB_DIR!"
-		echo|set /p="Do you want to add such path into PATH environment variable? [y/n]: " & choice /c yn /n
+		echo|set /p="Do you want to set it system-wide? [y/n]: " & choice /c yn /n
 		if !errorlevel!==1 (
 			for /F "tokens=2,*" %%A in ('reg query "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /v Path ^| find /i "Path"') do (
 				set "reg_path=%%B;!ADB_DIR!"
 			)
 			echo.
 			echo Adding adb path into PATH...
-			reg add "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /f /v Path /t REG_SZ /d "!reg_path!\">nul 2>&1&& (
+			reg add "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /f /v Path /t REG_SZ /d "!reg_path!^">nul 2>&1&& (
 				echo      Done.
 				echo      Since you keep adb binary in this same path, you will not be prompted about it.
 				echo      This change will take effect in the next logon.
 			) || (
 				echo      Failed.
 			)
-			echo.
-			pause
 		)
+		echo.
+		pause
+		goto ADB_DRIVER
 	) else if !errorlevel!==3 (
 		exit
 	)
 )
-
+:ADB_DRIVER
+REM ADB driver check
+reg query "HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Control\Class\{3f966bd9-fa04-4ec5-991c-d326973b5128}" /v "Class" | findstr /i /c:"AndroidUsbDeviceClass" > nul 2>&1 || (
+	echo Warning.
+	echo.
+    echo It seems adb driver is not installed yet.
+	echo.
+	echo|set /p="Do you want to install it now? [y/n]: " & choice /c yn /n
+	if !errorlevel!==1 (
+		echo.
+		echo Downloading usb_driver_r13-windows.zip...
+		certutil -urlcache -split -f https://dl.google.com/android/repository/usb_driver_r13-windows.zip > nul 2>&1 || (
+			echo     Failed.
+			echo.
+			pause
+			exit
+		)
+		echo      Done
+		echo.
+		echo.
+		echo Unpacking usb_driver_r13-windows.zip...
+		7z.exe x usb_driver_r13-windows.zip > nul 2>&1 || (
+			echo     Failed.
+			echo.
+			pause
+			if exist usb_driver_r13-windows.zip del /f /q usb_driver_r13-windows.zip > nul 2>&1
+			exit
+		)
+		if not exist usb_driver (
+			echo     Failed.
+			echo.
+			pause
+			if exist usb_driver_r13-windows.zip del /f /q usb_driver_r13-windows.zip > nul 2>&1
+			exit		
+		)
+		echo      Done
+		echo.
+		echo.		
+		echo Installing Android USB Driver...
+		pnputil /i /a usb_driver\android_winusb.inf || (
+			echo     Failed.
+			echo.
+			pause
+			if exist usb_driver_r13-windows.zip del /f /q usb_driver_r13-windows.zip
+			if exist usb_driver rmdir /s /q usb_driver > nul 2>&1
+			exit
+		)
+		if exist usb_driver_r13-windows.zip del /f /q usb_driver_r13-windows.zip
+		if exist usb_driver rmdir /s /q usb_driver > nul 2>&1
+	)
+	echo      Done
+	echo.
+	timeout 3 /nobreak > nul 2>&1
+)
 
 call :MAIN
 exit
@@ -274,7 +375,7 @@ goto :EOF
 		diskpart /s diskpart_script.tmp >nul 2>&1 && (
 			echo      Done.
 		) || (
-			del diskpart_script.tmp
+			del /f /q diskpart_script.tmp >nul 2>&1
 			echo      Error.
 			echo.
 			pause
@@ -400,13 +501,13 @@ goto :EOF
 		diskpart /s diskpart_script.tmp >nul 2>&1 && (
 			echo      Done.
 		) || (
-			del diskpart_script.tmp
+			del /f /q diskpart_script.tmp > nul 2>&1
 			echo      Error.
 			echo.
 			pause
 			call :MAIN
 		)
-		if exist diskpart_script.tmp del diskpart_script.tmp
+		if exist diskpart_script.tmp del /f /q diskpart_script.tmp > nul 2>&1
 	) else if !errorlevel!==1 (
 		set DRIVES_LIST=
 		set DRIVES_LIST_CHOICE=
@@ -466,10 +567,10 @@ goto :EOF
 				echo      Format it using duckpart and try again.
 				echo.
 				pause
-				if exist diskpart_script.tmp del diskpart_script.tmp
+				if exist diskpart_script.tmp del /f /q diskpart_script.tmp > nul 2>&1
 				call :MAIN
 			)
-			if exist diskpart_script.tmp del diskpart_script.tmp
+			if exist diskpart_script.tmp del /f /q diskpart_script.tmp > nul 2>&1
 		)
 	)
 
@@ -597,7 +698,7 @@ goto :EOF
 		msg * Windows deployment failed.
 		echo.
 		pause
-		if exist !WIM_NAME! del !WIM_NAME! > nul 2>&1
+		if exist !WIM_NAME! del /f /q !WIM_NAME! > nul 2>&1
 		call :MAIN
 	)
 
@@ -611,7 +712,7 @@ goto :EOF
 		echo      Check the screen.
 		echo.
 		pause
-		if exist !WIM_NAME! del !WIM_NAME! > nul 2>&1
+		if exist !WIM_NAME! del /f /q !WIM_NAME! > nul 2>&1
 		call :MAIN
 	)
 
@@ -807,7 +908,7 @@ REM	Recovery capabilities
 		)
 		echo.
 		pause
-		if exist !REG_FILE_NAME_FIXED! del !REG_FILE_NAME_FIXED!
+		if exist !REG_FILE_NAME_FIXED! del /f /q !REG_FILE_NAME_FIXED!
 		goto REGISTRY_OPTIONS
 	)
 	reg unload HKLM\WOASYSTEM > nul 2>&1 || (
@@ -828,7 +929,7 @@ REM	Recovery capabilities
 		echo 3. Click on File ^(or whatever is ^"file^" in your language^)
 		echo 4. Click on Unload Hive...
 	)
-	if exist bcdedit.tmp del bcdedit.tmp > nul 2>&1
+	if exist bcdedit.tmp del /f /q bcdedit.tmp > nul 2>&1
 
 	echo.
 	echo.
@@ -844,7 +945,7 @@ REM	Recovery capabilities
 	echo That^'s all.
 	echo.
 	pause
-	if exist !WIM_NAME! del !WIM_NAME! > nul 2>&1
+	if exist !WIM_NAME! del /f /q !WIM_NAME! > nul 2>&1
 	call :MAIN
 goto :EOF
 
@@ -1141,8 +1242,8 @@ goto :EOF
 		echo ______________________________________
 	)
 	echo.
-	del !AIK!\error.tmp > nul 2>&1
-	del !AIK!\done.tmp > nul 2>&1
+	del /f /q !AIK!\error.tmp > nul 2>&1
+	del /f /q !AIK!\done.tmp > nul 2>&1
 	echo Repacking !recovery_filename!...
 	start /B cmd /C !AIK!\repackimg.bat > nul 2>&1
 	:loop_repacking
@@ -1311,10 +1412,10 @@ goto :EOF
 goto :EOF
 ::######################################################################################################################
 :CLEAN_TMP
-	del !AIK!\error.tmp > nul 2>&1
-	del !AIK!\done.tmp > nul 2>&1
+	del /f /q !AIK!\error.tmp > nul 2>&1
+	del /f /q !AIK!\done.tmp > nul 2>&1
 	for %%a in ("%AIK%\*.img") do (
-		del /Q "%%a" > nul 2>&1
+		del /f /q "%%a" > nul 2>&1
 	)
 goto :EOF
 ::######################################################################################################################
@@ -1339,7 +1440,7 @@ goto :EOF
 				for /F "usebackq delims=" %%A in (`"type "!TEMP!\adb.txt" | find "" /v /c"`) do (
 					set /a devices=%%A-2
 				)
-				del "!TEMP!\adb.txt"
+				del /f /q "!TEMP!\adb.txt" > nul 2>&1
 				if !devices! GTR 1 (
 					echo !devices! devices were detected.
 					echo Please keep only the target device connected.
@@ -1385,7 +1486,7 @@ goto :EOF
 		)
 	)
 	for /F "usebackq delims=" %%A in (`"type "%TEMP%\adb.txt" | find "" /v /c"`) do set /a devices=%%A-2
-	del "%TEMP%\adb.txt"
+	del /f /q "!TEMP!\adb.txt" > nul 2>&1
 	if !devices! GTR 1 (
 		echo !devices! devices were detected.
 		echo Please keep only the target device connected.
