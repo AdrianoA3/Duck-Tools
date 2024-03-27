@@ -1099,6 +1099,7 @@ IHATESM660
 return_main(){
 	echo
 	echo -n Press any key to return to main page && read -n 1
+	echo -e "\n\n\n\n\n\n"
 	main
 	exit
 }
@@ -2149,6 +2150,7 @@ main(){
 		echo
 		echo
 		echo First time here? You may like to check
+		echo "├─ Q. FAQ"
 		echo "├─ B. Backup $disk table"
 		echo "├─ D. Dump $disk partitions"
 		echo "└─ S. Show current $disk partition table"
@@ -2159,8 +2161,7 @@ main(){
 		echo "├─ F. Format partitions"
 		echo "├─ R. Remove Windows and ESP partitions"
 		echo "├─ U. $msc_main USB Mass Storage mode (USB will be reconnected)"
-		echo "├─ M. Manual partitioning"
-		echo "└─ G. Why GiB instead GB?"
+		echo "└─ M. Manual partitioning"
 		echo
 		echo
 		echo E. Exit
@@ -2168,6 +2169,39 @@ main(){
 		echo -n "Choose: " && read -n 1 input_main
 		clear
 		case $input_main in
+			q|Q)
+				echo Q. FAQ
+				echo
+				echo
+				echo "Q: How to use this tool?"
+				echo "R: Read the guide on: t.me/duck_tools"
+				echo
+				echo "Q: Will Windows boot on my device?"
+				echo "R: You tell me. A booting Windows depends on UEFI and a minimal ACPI support."
+				echo "   Duck Tools won't help you with any of this."
+				echo "   And if you really thing Duck Tools would do that, exit now and ask for help."
+				echo
+				echo "Q: Should I really backup my partitions?"
+				echo "R: It's just a recommendation."
+				echo "   But do it, or face the consequences."
+				echo
+				echo "Q. Why GiB instead GB?"
+				echo "R: This tool uses the binary system of data units prefixes."
+				echo "   As KB/MB/GB is part of the decimal system of prefixes,"
+				echo "   it is factor of 1,000 and may not represent sizes maybe you'd expect."
+				echo "   For example: 1 KB = 1000 bytes, 1 KiB = 1024 bytes"
+				echo "   This way, if you'd choose 50 GB, the real"
+				echo "   Windows partition size would be about 46,5 GiB."
+				echo
+				echo "Q: USB Mass Storage mode isn't working at all. Why?"
+				echo "R: Who knows..."
+				echo "   Try to enable MTP. If it's enabled, disable it."
+				echo "   UMS mode depends on recovery support and host PC drivers."
+				echo "   I had once to reinstall whole Windows on PC due drivers issue."
+				echo "   As far as I know, UMS mode works fine on Orange Fox recovery."
+				echo "   I hope someday find a fix for that."
+				return_main
+			;;
 			c|C)
 				create_partitions
 			;;
@@ -2189,18 +2223,6 @@ main(){
 			s|S)
 				parted -s /dev/block/$disk print free 2>/dev/null
 				echo
-				return_main
-			;;
-			g|G)
-				echo G. Why GiB instead GB?
-				echo
-				echo
-				echo This tool uses the binary system of data units prefixes.
-				echo "As KB/MB/GB is part of the decimal system of prefixes, it is factor of 1,000 and may not represent sizes maybe you'd expect."
-				echo For example:
-				echo 1 KB = 1000 bytes
-				echo 1 KiB = 1024 bytes
-				echo "This way, if you'd choose 50 GB, the real Windows partition size would be about 46,5 GiB."
 				return_main
 			;;
 			d|D)
