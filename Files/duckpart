@@ -1984,6 +1984,7 @@ main(){
 	# Progress bar stuff
 	charload="|"
 	charblank=" "
+	unset dotbar loadbar blankbar linebar
 	for i in $(seq 1 $terminal_columns); do
 		dotbar="${dotbar}."
 		loadbar="${loadbar}|"
