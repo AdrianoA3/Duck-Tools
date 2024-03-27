@@ -2000,11 +2000,11 @@ main(){
 	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░██      ██░░░░░░░░░░░░██        "
 	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░████████████░░░░░░░░██          "
 	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░██░░░░░░░░░░░░░░░░░░░░██        "
-	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██      "
-	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██      "
-	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██      "
-	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░██        "
-	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "  ██░░░░░░░░░░░░░░░░░░░░░░░░░░██          "
+	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░░░░░░░░░░░░░░░░██░░░░░░░██      "
+	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░██░░░░░░░░░░░░░░░░░██░░░░░░██      "
+	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░██░░░░░░░░░░░░░░░██░░░░░░██      "
+	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "██░░░░░░░░░██░░░░░░░░░░░██░░░░░░██        "
+	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "  ██░░░░░░░░░███████████░░░░░░██          "
 	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "    ██████░░░░░░░░░░░░░░░░████            "
 	echo -n "${blankbar:0:$(( $terminal_columns/2 - 42/2 ))}" && echo "          ████████████████                "
 	echo
@@ -2217,4 +2217,5 @@ main(){
 [[ $1 == msc ]] && {
 	msc 1 && exit 0 || exit 1
 }
+
 main
