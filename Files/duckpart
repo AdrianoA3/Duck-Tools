@@ -188,12 +188,15 @@ format_userdata(){
 			echo
 			[[ -n $canformatf2fs ]] && echo "F. F2FS" || echo "!. Use recovery menu to format as F2FS."
 			[[ -n $canformatext4 ]] && echo "E. EXT4" || echo "!. Use recovery menu to format as EXT4."
+			echo
 			echo -n "Choose: " && read -n 1 userdata_fs
 			echo
 			[[ -n $canformatext4 && -n $canformatf2fs && $userdata_fs =~ ^[fFeE]$ ]] && break
 			[[ -z $canformatext4 && -n $canformatf2fs && $userdata_fs =~ ^[fF]$ ]] && break
 			[[ -n $canformatext4 && -z $canformatf2fs && $userdata_fs =~ ^[eE]$ ]] && break
 		done
+		echo
+		echo
 		[[ $userdata_fs =~ ^[eE]$ ]] && {
 			echo Formating userdata as EXT4...
 			echo "$linebar"
@@ -748,6 +751,7 @@ create_partitions(){
 			while true; do
 				echo -n "Do you want to return to main page and use M option to remove and recreate userdata taking the whole free space? (y/n) :" && read -n1 user_input
 				echo
+				echo
 				[[ $user_input =~ ^[yYnN]$ ]] && break
 			done
 			[[ $user_input =~ ^[yY]$ ]] && {
@@ -884,11 +888,12 @@ create_partitions(){
 	echo C. Create partitions
 	echo
 	echo
-	echo "You chose: $user_input GiB"
+	echo "You chose $user_input GiB for Windows."
 	[[ $windows_size_b -lt $windows_min ]] && echo -n "\nThe chosen Windows partition size is smaller than the minimum value which is 27 GiB.\nYou have been warned.\n\n"
-	[[ $has_userdata == 1 ]] && echo This way your new userdata size will be: $(bytes2human $userdata_new_size_b)
+	[[ $has_userdata == 1 ]] && echo This way your new userdata size will be $(bytes2human $userdata_new_size_b).
 	echo
 	echo "The new layout will be (GiB):"
+	echo
 	echo "          Num    Start        End       Length"
 	[[ $has_userdata == 1 ]] && {
 		echo Userdata: $userdata_number - $(bytes2human $userdata_start_b) - $(bytes2human $userdata_new_end_b) - $(bytes2human $userdata_new_size_b)
