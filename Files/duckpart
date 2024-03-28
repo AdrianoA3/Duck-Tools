@@ -609,13 +609,14 @@ remove_win_esp(){
 				echo "Partition name  : $partition_name"
 				echo "Partition number: $lastpartition_number"
 				echo "$linebar"
+				[[ $partition_name = userdata ]] && echo In order to resize userdata into max available size, removing it is needed.
 				echo -n "Do you want to remove it? (y/n): " && read -n 1 user_input
 				echo
 				echo
 				[[ $user_input =~ ^[yYnN]$ ]] && break
 			done
 			[[ $user_input =~ ^[nN]$ ]] && return_main
-			[[ $partition_name =~ ^(win|esp|userdata)$ ]] || {
+			[[ $partition_name =~ ^(win|esp|userdata|linux)$ ]] || {
 				while true; do
 					echo "Unexpected partition: $partition_name"
 					echo -n "Are you really sure about removing it? (y/n): " && read -n 1 user_input
@@ -659,12 +660,12 @@ remove_win_esp(){
 		echo
 		[[ $user_input =~ ^[nN]$ ]] && return_main
 
-		userdata_start=$(parted -s /dev/block/$disk unit s print free 2>/dev/null | grep "Free Space" | tail -n 1 | awk '{print $1}')
+		userdata_start=$(parted -s /dev/block/$disk unit s print free 2>/dev/null | grep "Free Space" | tail -n 1 | awk '{print $1}' | sed 's/s//g')
 
 		# Align
 		[[ $(( $userdata_start % $PSAN )) == 0 ]] || userdata_start=$(( $userdata_start + $PSAN - ( $userdata_start % $PSAN ) ))
 
-		userdata_end=$(parted -s /dev/block/$disk unit s print free 2>/dev/null | grep "Free Space" | tail -n 1 | awk '{print $2}')
+		userdata_end=$(parted -s /dev/block/$disk unit s print free 2>/dev/null | grep "Free Space" | tail -n 1 | awk '{print $2}' | sed 's/s//g')
 		echo Creating userdata as ext4...
 		echo "$linebar"
 		parted -s /dev/block/$disk mkpart userdata ext4 $userdata_start $userdata_end && {
