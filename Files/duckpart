@@ -963,10 +963,10 @@ create_partitions(){
 		echo Creating userdata as a EXT4 partition from $(bytes2human $userdata_start) to $(bytes2human $userdata_new_end)...
 		echo "$linebar"
 		parted -s /dev/block/$disk mkpart userdata ext4 $userdata_start_s"s" $userdata_new_end_s"s" && {
+			[[ -e /dev/block/platform/soc/$storage/by-name/userdata ]] || ln -s /dev/block/$disk${TFP}$userdata_number /dev/block/platform/soc/$storage/by-name/userdata > /dev/null 2>&1
 			echo "$linebar"
 			echo "     Done."
 			echo
-			[[ -e /dev/block/platform/soc/$storage/by-name/userdata ]] || ln -s /dev/block/$disk${TFP}$userdata_number /dev/block/platform/soc/$storage/by-name/userdata > /dev/null 2>&1
 		}||{
 			echo "$linebar"
 			echo "     Could not create userdata partition."
@@ -1034,6 +1034,7 @@ create_partitions(){
 	}
 
 	[[ $has_userdata == 1 ]] && {
+		echo
 		format_userdata
 	}
 	echo
@@ -1407,8 +1408,8 @@ manual_partitioning(){
 		parted -s /dev/block/$disk print free 2>/dev/null
 		echo
 		echo C. Create a new partition
-		echo R. Remove a partition
-		echo E. Exit
+		echo D. Delete a partition
+		echo R. Return
 		echo
 		echo -n "Choose: " && read -n 1 user_input
 		echo
@@ -1416,7 +1417,7 @@ manual_partitioning(){
 		[[ $user_input =~ ^[cCrReE]$ ]] && break
 	done
 	case $user_input in
-		e|E) 
+		r|R) 
 			main
 			exit
 		;;
@@ -1631,7 +1632,7 @@ manual_partitioning(){
 				esac
 			}
 		;;
-		r|R)
+		d|D)
 			while true; do
 				echo "$linebar"
 				echo -n "Enter the partition name you want to remove or x to exit: " && read part_name
